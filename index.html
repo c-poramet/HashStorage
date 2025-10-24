@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hash Storage</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -92,6 +93,61 @@
                         <div class="delete-modal-buttons">
                             <button id="confirm-delete-btn" class="delete-btn">Delete Entry</button>
                             <button id="cancel-delete-btn" class="cancel-btn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Export Modal -->
+                <div id="qr-export-modal" class="modal">
+                    <div class="modal-content qr-export-modal-content">
+                        <span class="close-qr">&times;</span>
+                        <h3>Export as QR Code</h3>
+                        
+                        <div class="qr-options">
+                            <div class="hash-selection">
+                                <h4>Select Hash Type:</h4>
+                                <div class="hash-type-buttons">
+                                    <button id="qr-sha256-btn" class="hash-type-btn active">SHA256</button>
+                                    <button id="qr-sha512-btn" class="hash-type-btn">SHA512</button>
+                                </div>
+                            </div>
+                            
+                            <div class="color-selection">
+                                <h4>Customize Colors:</h4>
+                                <div class="color-pickers">
+                                    <div class="color-picker-group">
+                                        <label for="qr-foreground-color">Foreground:</label>
+                                        <div class="color-picker-wrapper">
+                                            <input type="color" id="qr-foreground-color" value="#000000">
+                                            <span class="color-hex">#000000</span>
+                                        </div>
+                                    </div>
+                                    <div class="color-picker-group">
+                                        <label for="qr-background-color">Background:</label>
+                                        <div class="color-picker-wrapper">
+                                            <input type="color" id="qr-background-color" value="#ffffff">
+                                            <span class="color-hex">#ffffff</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="qr-preview">
+                            <div id="qr-code-container"></div>
+                            <button id="generate-qr-btn" class="generate-qr-btn">Generate QR Code</button>
+                            <button id="download-qr-btn" class="download-qr-btn" style="display: none;">Download QR Code</button>
+                        </div>
+                        
+                        <div class="qr-info">
+                            <div class="qr-question">
+                                <strong>Question:</strong>
+                                <p id="qr-question-text"></p>
+                            </div>
+                            <div class="qr-timestamp">
+                                <strong>Created:</strong>
+                                <span id="qr-timestamp-text"></span>
+                            </div>
                         </div>
                     </div>
                 </div>

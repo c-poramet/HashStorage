@@ -205,8 +205,23 @@ class UIManager {
         this.cancelDeleteBtn = document.getElementById('cancel-delete-btn');
         this.closeDeleteBtn = document.querySelector('.close-delete');
         
+        // QR Export modal elements
+        this.qrModal = document.getElementById('qr-export-modal');
+        this.closeQrBtn = document.querySelector('.close-qr');
+        this.qrSha256Btn = document.getElementById('qr-sha256-btn');
+        this.qrSha512Btn = document.getElementById('qr-sha512-btn');
+        this.qrForegroundColor = document.getElementById('qr-foreground-color');
+        this.qrBackgroundColor = document.getElementById('qr-background-color');
+        this.qrCodeContainer = document.getElementById('qr-code-container');
+        this.generateQrBtn = document.getElementById('generate-qr-btn');
+        this.downloadQrBtn = document.getElementById('download-qr-btn');
+        this.qrQuestionText = document.getElementById('qr-question-text');
+        this.qrTimestampText = document.getElementById('qr-timestamp-text');
+        
         this.currentDeleteId = null;
         this.currentConfirmationCode = null;
+        this.currentQrEntry = null;
+        this.currentQrCode = null;
         this.filteredEntries = [];
         
         this.init();
@@ -237,6 +252,18 @@ class UIManager {
                 this.handleDeleteConfirmation();
             }
         });
+
+        // QR Export modal events
+        this.closeQrBtn.addEventListener('click', () => this.closeQrModal());
+        this.qrModal.addEventListener('click', (e) => {
+            if (e.target === this.qrModal) this.closeQrModal();
+        });
+        this.qrSha256Btn.addEventListener('click', () => this.selectHashType('sha256'));
+        this.qrSha512Btn.addEventListener('click', () => this.selectHashType('sha512'));
+        this.qrForegroundColor.addEventListener('input', () => this.updateColorHex());
+        this.qrBackgroundColor.addEventListener('input', () => this.updateColorHex());
+        this.generateQrBtn.addEventListener('click', () => this.generateQrCode());
+        this.downloadQrBtn.addEventListener('click', () => this.downloadQrCode());
 
         // Search functionality
         this.searchInput.addEventListener('input', () => this.handleSearch());
@@ -304,6 +331,11 @@ class UIManager {
                                 <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
                             </svg>
                         </button>
+                        <button class="qr-export-btn" data-entry-id="${entry.id}" title="Export as QR Code">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 11H5V13H3V11ZM3 7H5V9H3V7ZM3 15H5V17H3V15ZM7 15H9V17H7V15ZM7 19H9V21H7V19ZM7 11H9V13H7V11ZM7 7H9V9H7V7ZM7 3H9V5H7V3ZM11 15H13V17H11V15ZM11 19H13V21H11V19ZM11 11H13V13H11V11ZM11 7H13V9H11V7ZM11 3H13V5H11V3ZM15 11H17V13H15V11ZM15 7H17V9H15V7ZM15 3H17V5H15V3ZM19 7H21V9H19V7ZM19 3H21V5H19V3ZM19 15H21V17H19V15ZM19 19H21V21H19V19Z"/>
+                            </svg>
+                        </button>
                         <button class="delete-btn-small" data-entry-id="${entry.id}" title="Delete entry">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"/>
@@ -330,7 +362,7 @@ class UIManager {
         this.historyList.querySelectorAll('.history-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 // Don't trigger if clicking on buttons
-                if (e.target.closest('.copy-btn') || e.target.closest('.copy-btn-sha512') || e.target.closest('.delete-btn-small')) {
+                if (e.target.closest('.copy-btn') || e.target.closest('.copy-btn-sha512') || e.target.closest('.qr-export-btn') || e.target.closest('.delete-btn-small')) {
                     return;
                 }
                 const entryId = card.dataset.entryId;
@@ -364,6 +396,15 @@ class UIManager {
                 e.stopPropagation();
                 const entryId = btn.dataset.entryId;
                 this.showDeleteConfirmation(entryId);
+            });
+        });
+
+        // Add QR export button listeners
+        this.historyList.querySelectorAll('.qr-export-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryId = btn.dataset.entryId;
+                this.showQrExportModal(entryId);
             });
         });
     }
@@ -533,6 +574,122 @@ class UIManager {
         setTimeout(() => {
             messageEl.remove();
         }, 3000);
+    }
+
+    // QR Export Modal Methods
+    showQrExportModal(entryId) {
+        const entry = this.entryManager.getEntryById(entryId);
+        if (!entry) return;
+
+        this.currentQrEntry = entry;
+        
+        // Populate modal content
+        this.qrQuestionText.textContent = entry.question;
+        this.qrTimestampText.textContent = entry.timestampFormatted;
+        
+        // Reset to default state
+        this.selectHashType('sha256');
+        this.qrForegroundColor.value = '#000000';
+        this.qrBackgroundColor.value = '#ffffff';
+        this.updateColorHex();
+        this.qrCodeContainer.innerHTML = '';
+        this.downloadQrBtn.style.display = 'none';
+        this.currentQrCode = null;
+        
+        this.qrModal.classList.add('show');
+    }
+
+    closeQrModal() {
+        this.qrModal.classList.remove('show');
+        this.currentQrEntry = null;
+        this.currentQrCode = null;
+        this.qrCodeContainer.innerHTML = '';
+        this.downloadQrBtn.style.display = 'none';
+    }
+
+    selectHashType(hashType) {
+        // Update button states
+        this.qrSha256Btn.classList.toggle('active', hashType === 'sha256');
+        this.qrSha512Btn.classList.toggle('active', hashType === 'sha512');
+        
+        // Clear previous QR code when changing hash type
+        this.qrCodeContainer.innerHTML = '';
+        this.downloadQrBtn.style.display = 'none';
+        this.currentQrCode = null;
+    }
+
+    updateColorHex() {
+        // Update hex displays
+        const fgColorHex = document.querySelectorAll('.color-hex')[0];
+        const bgColorHex = document.querySelectorAll('.color-hex')[1];
+        
+        if (fgColorHex) fgColorHex.textContent = this.qrForegroundColor.value.toUpperCase();
+        if (bgColorHex) bgColorHex.textContent = this.qrBackgroundColor.value.toUpperCase();
+    }
+
+    generateQrCode() {
+        if (!this.currentQrEntry) return;
+
+        // Get selected hash type
+        const issha256 = this.qrSha256Btn.classList.contains('active');
+        const hashValue = issha256 ? this.currentQrEntry.hashedAnswerSHA256 : this.currentQrEntry.hashedAnswerSHA512;
+        
+        // Clear container
+        this.qrCodeContainer.innerHTML = '';
+        
+        try {
+            // Create QR code using QRious
+            const qr = new QRious({
+                element: null,
+                value: hashValue,
+                size: 300,
+                foreground: this.qrForegroundColor.value,
+                background: this.qrBackgroundColor.value,
+                level: 'M'
+            });
+
+            // Add canvas to container
+            this.qrCodeContainer.appendChild(qr.canvas);
+            this.currentQrCode = qr;
+            
+            // Show download button
+            this.downloadQrBtn.style.display = 'inline-block';
+            
+            this.showTemporaryMessage('QR code generated successfully!');
+        } catch (error) {
+            console.error('Error generating QR code:', error);
+            this.showTemporaryMessage('Error generating QR code');
+        }
+    }
+
+    downloadQrCode() {
+        if (!this.currentQrCode || !this.currentQrEntry) return;
+
+        try {
+            // Create download link
+            const canvas = this.currentQrCode.canvas;
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            // Get selected hash type for filename
+            const hashType = this.qrSha256Btn.classList.contains('active') ? 'SHA256' : 'SHA512';
+            
+            // Create filename with timestamp
+            const timestamp = new Date(this.currentQrEntry.timestamp).toISOString().split('T')[0];
+            const filename = `QR_${hashType}_${timestamp}_${this.currentQrEntry.id}.png`;
+            
+            // Create temporary download link
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showTemporaryMessage('QR code downloaded successfully!');
+        } catch (error) {
+            console.error('Error downloading QR code:', error);
+            this.showTemporaryMessage('Error downloading QR code');
+        }
     }
 }
 

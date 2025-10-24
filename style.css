@@ -566,7 +566,7 @@ body {
     opacity: 1;
 }
 
-.copy-btn, .copy-btn-sha512, .delete-btn-small {
+.copy-btn, .copy-btn-sha512, .qr-export-btn, .delete-btn-small {
     padding: 10px 12px;
     border: 2px solid;
     border-radius: 8px;
@@ -605,6 +605,20 @@ body {
     background: #138d75;
     border-color: #138d75;
     box-shadow: 0 4px 12px rgba(22, 160, 133, 0.4);
+    transform: translateY(-1px);
+}
+
+.qr-export-btn {
+    background: #9b59b6;
+    color: white;
+    border-color: #9b59b6;
+    box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+}
+
+.qr-export-btn:hover {
+    background: #8e44ad;
+    border-color: #8e44ad;
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
     transform: translateY(-1px);
 }
 
@@ -711,6 +725,240 @@ body {
 .cancel-btn:hover {
     background: var(--cream-medium);
     border-color: var(--text-secondary);
+}
+
+/* QR Export Modal Styles */
+.qr-export-modal-content {
+    max-width: 700px;
+    width: 90%;
+}
+
+.qr-options {
+    margin-bottom: 30px;
+}
+
+.hash-selection {
+    margin-bottom: 24px;
+}
+
+.hash-selection h4, .color-selection h4 {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hash-type-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.hash-type-btn {
+    padding: 12px 24px;
+    border: 2px solid var(--glass-border);
+    border-radius: 8px;
+    background: var(--cream-light);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hash-type-btn:hover {
+    border-color: var(--magenta-primary);
+    background: var(--magenta-transparent);
+}
+
+.hash-type-btn.active {
+    background: var(--magenta-primary);
+    color: white;
+    border-color: var(--magenta-primary);
+    box-shadow: 0 2px 8px var(--magenta-shadow);
+}
+
+.color-selection {
+    margin-bottom: 20px;
+}
+
+.color-pickers {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+
+.color-picker-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.color-picker-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.color-picker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 2px solid var(--glass-border);
+    border-radius: 8px;
+    background: var(--cream-white);
+    transition: border-color 0.3s ease;
+}
+
+.color-picker-wrapper:focus-within {
+    border-color: var(--magenta-primary);
+    box-shadow: 0 0 10px var(--magenta-glow);
+}
+
+.color-picker-wrapper input[type="color"] {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: none;
+    padding: 0;
+}
+
+.color-picker-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border: 2px solid var(--glass-border);
+    border-radius: 6px;
+}
+
+.color-picker-wrapper input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.color-hex {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--cream-light);
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--glass-border);
+    min-width: 80px;
+    text-align: center;
+}
+
+.qr-preview {
+    margin: 30px 0;
+    text-align: center;
+    padding: 20px;
+    background: var(--cream-light);
+    border-radius: 12px;
+    border: 2px solid var(--glass-border);
+}
+
+#qr-code-container {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    background: white;
+    border-radius: 8px;
+    border: 2px dashed var(--glass-border);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+#qr-code-container:empty::before {
+    content: "QR code will appear here";
+}
+
+#qr-code-container canvas {
+    border-radius: 8px;
+}
+
+.generate-qr-btn, .download-qr-btn {
+    padding: 12px 24px;
+    margin: 8px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid;
+}
+
+.generate-qr-btn {
+    background: var(--magenta-primary);
+    color: white;
+    border-color: var(--magenta-primary);
+    box-shadow: 0 2px 8px var(--magenta-shadow);
+}
+
+.generate-qr-btn:hover {
+    background: var(--magenta-dark);
+    border-color: var(--magenta-dark);
+    box-shadow: 0 4px 12px var(--magenta-shadow);
+    transform: translateY(-1px);
+}
+
+.download-qr-btn {
+    background: #27ae60;
+    color: white;
+    border-color: #27ae60;
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+.download-qr-btn:hover {
+    background: #219a52;
+    border-color: #219a52;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+    transform: translateY(-1px);
+}
+
+.qr-info {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--cream-light);
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+}
+
+.qr-question {
+    margin-bottom: 16px;
+}
+
+.qr-question strong, .qr-timestamp strong {
+    color: var(--magenta-primary);
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.qr-question p {
+    margin: 8px 0 0 0;
+    color: var(--text-primary);
+    font-weight: 500;
+    line-height: 1.4;
+    background: var(--cream-white);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+}
+
+.qr-timestamp {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.qr-timestamp span {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
 }
 
 /* Right column */
