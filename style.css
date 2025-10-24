@@ -26,6 +26,14 @@ html, body {
     --glass-border: rgba(224, 221, 214, 0.6);
     --shadow-light: rgba(0, 0, 0, 0.05);
     --shadow-medium: rgba(0, 0, 0, 0.1);
+    
+    /* Magenta accent colors */
+    --magenta-primary: #c44569;
+    --magenta-light: #e55982;
+    --magenta-dark: #a73650;
+    --magenta-transparent: rgba(196, 69, 105, 0.1);
+    --magenta-shadow: rgba(196, 69, 105, 0.2);
+    --magenta-glow: rgba(196, 69, 105, 0.3);
 }
 
 /* Dark theme colors */
@@ -42,6 +50,14 @@ html, body {
     --glass-border: rgba(60, 56, 48, 0.6);
     --shadow-light: rgba(0, 0, 0, 0.2);
     --shadow-medium: rgba(0, 0, 0, 0.3);
+    
+    /* Magenta accent colors for dark theme */
+    --magenta-primary: #ff6b9d;
+    --magenta-light: #ff8fb3;
+    --magenta-dark: #e55a87;
+    --magenta-transparent: rgba(255, 107, 157, 0.15);
+    --magenta-shadow: rgba(255, 107, 157, 0.25);
+    --magenta-glow: rgba(255, 107, 157, 0.4);
 }
 
 body {
@@ -122,8 +138,25 @@ body {
     font-size: 28px;
     font-weight: 300;
     letter-spacing: 2px;
-    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--magenta-primary) 0%, var(--magenta-light) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     text-shadow: 0 1px 2px var(--shadow-light);
+    position: relative;
+}
+
+.app-title h1::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--magenta-primary), var(--magenta-light));
+    border-radius: 1px;
+    box-shadow: 0 2px 8px var(--magenta-shadow);
 }
 
 /* History view - 5 flex */
@@ -164,24 +197,26 @@ body {
 }
 
 .history-item:hover {
-    background: var(--cream-medium);
+    background: var(--magenta-transparent);
+    border-color: var(--magenta-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px var(--shadow-medium);
+    box-shadow: 0 4px 15px var(--magenta-shadow);
 }
 
 .history-item:hover::before {
     left: 100%;
+    background: linear-gradient(90deg, transparent, var(--magenta-glow), transparent);
 }
 
 .history-item.active {
-    background: var(--text-primary);
+    background: linear-gradient(135deg, var(--magenta-primary) 0%, var(--magenta-dark) 100%);
     color: var(--cream-white);
-    border-color: var(--text-primary);
-    box-shadow: 0 4px 20px var(--shadow-medium);
+    border-color: var(--magenta-primary);
+    box-shadow: 0 4px 20px var(--magenta-shadow), 0 0 30px var(--magenta-glow);
 }
 
 .history-item.active::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 }
 
 /* Settings - 3 flex */
@@ -206,10 +241,11 @@ body {
 
 .settings-content h3 {
     margin-bottom: 20px;
-    color: var(--text-primary);
+    color: var(--magenta-primary);
     font-weight: 300;
     font-size: 18px;
     text-align: center;
+    text-shadow: 0 1px 3px var(--magenta-shadow);
 }
 
 .setting-item {
@@ -240,6 +276,11 @@ body {
     box-shadow: inset 0 2px 4px var(--shadow-light);
 }
 
+.toggle-slider:hover {
+    box-shadow: inset 0 2px 4px var(--shadow-light), 0 0 10px var(--magenta-glow);
+    border-color: var(--magenta-primary);
+}
+
 .toggle-slider::before {
     content: '';
     position: absolute;
@@ -254,11 +295,14 @@ body {
 }
 
 .theme-toggle input:checked + .toggle-slider {
-    background: var(--text-primary);
+    background: linear-gradient(135deg, var(--magenta-primary) 0%, var(--magenta-light) 100%);
+    box-shadow: inset 0 2px 4px var(--shadow-light), 0 0 15px var(--magenta-glow);
 }
 
 .theme-toggle input:checked + .toggle-slider::before {
     transform: translateX(26px);
+    background: var(--cream-white);
+    box-shadow: 0 2px 8px var(--magenta-shadow);
 }
 
 .toggle-label {
@@ -287,7 +331,10 @@ body {
 
 .input-form h2 {
     margin-bottom: 30px;
-    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--magenta-primary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     font-weight: 300;
     font-size: 28px;
     text-shadow: 0 1px 2px var(--shadow-light);
@@ -322,10 +369,10 @@ body {
 .form-group input:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: var(--text-secondary);
+    border-color: var(--magenta-primary);
     background: var(--cream-light);
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px var(--shadow-medium);
+    box-shadow: 0 4px 15px var(--magenta-shadow), 0 0 20px var(--magenta-glow);
 }
 
 .form-group textarea {
@@ -356,18 +403,21 @@ button::before {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background: linear-gradient(90deg, transparent, var(--magenta-glow), transparent);
     transition: left 0.5s ease;
 }
 
 button:hover {
-    background: var(--cream-medium);
+    background: linear-gradient(135deg, var(--magenta-primary) 0%, var(--magenta-light) 100%);
+    color: var(--cream-white);
+    border-color: var(--magenta-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px var(--shadow-medium);
+    box-shadow: 0 4px 15px var(--magenta-shadow), 0 0 25px var(--magenta-glow);
 }
 
 button:hover::before {
     left: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 button:active {
