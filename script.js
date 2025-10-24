@@ -578,7 +578,7 @@ class UIManager {
 
     // QR Export Modal Methods
     showQrExportModal(entryId) {
-        const entry = this.entryManager.getEntryById(entryId);
+        const entry = this.entryManager.getEntry(entryId);
         if (!entry) return;
 
         this.currentQrEntry = entry;
