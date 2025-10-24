@@ -42,7 +42,6 @@ class CryptoUtils {
 class SettingsManager {
     constructor() {
         this.darkThemeToggle = document.getElementById('dark-theme-toggle');
-        this.outputFormatToggle = document.getElementById('output-format-toggle');
         this.usernameInput = document.getElementById('username-input');
         this.init();
     }
@@ -55,22 +54,17 @@ class SettingsManager {
         this.applyTheme(settings.theme);
         this.darkThemeToggle.checked = settings.theme === 'dark';
         
-        // Set output format
-        this.outputFormatToggle.checked = settings.outputFormat === 'base64';
-        
         // Set username
         this.usernameInput.value = settings.username;
         
         // Add event listeners
         this.darkThemeToggle.addEventListener('change', () => this.saveSettings());
-        this.outputFormatToggle.addEventListener('change', () => this.saveSettings());
         this.usernameInput.addEventListener('input', () => this.saveSettings());
     }
 
     loadSettings() {
         const defaultSettings = {
             theme: 'light',
-            outputFormat: 'base16',
             username: 'Anonymous'
         };
         
@@ -81,7 +75,6 @@ class SettingsManager {
     saveSettings() {
         const settings = {
             theme: this.darkThemeToggle.checked ? 'dark' : 'light',
-            outputFormat: this.outputFormatToggle.checked ? 'base64' : 'base16',
             username: this.usernameInput.value || 'Anonymous'
         };
         
@@ -120,21 +113,16 @@ class EntryManager {
         const timestamp = Date.now();
         const randomString = CryptoUtils.generateRandomString();
         
-        // Create the string to hash: answer + username + timestamp + randomString
-        const hashInput = `${answer}|${settings.username}|${timestamp}|${randomString}`;
+        // Create the string to hash: answer + username + question + timestamp + randomString
+        const hashInput = `${answer}|${settings.username}|${question}|${timestamp}|${randomString}`;
         
         // Hash the input with both algorithms
         const sha256Bytes = await CryptoUtils.sha256(hashInput);
         const sha512Bytes = await CryptoUtils.sha512(hashInput);
             
-        // Format both hash outputs
-        const hashedAnswerSHA256 = settings.outputFormat === 'base64'
-            ? CryptoUtils.arrayBufferToBase64(sha256Bytes)
-            : CryptoUtils.arrayBufferToBase16(sha256Bytes);
-            
-        const hashedAnswerSHA512 = settings.outputFormat === 'base64'
-            ? CryptoUtils.arrayBufferToBase64(sha512Bytes)
-            : CryptoUtils.arrayBufferToBase16(sha512Bytes);
+        // Format both hash outputs using Base64 (default)
+        const hashedAnswerSHA256 = CryptoUtils.arrayBufferToBase64(sha256Bytes);
+        const hashedAnswerSHA512 = CryptoUtils.arrayBufferToBase64(sha512Bytes);
 
         const entry = {
             id: `entry_${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
@@ -147,7 +135,7 @@ class EntryManager {
             timestamp,
             timestampFormatted: this.format24HourTime(timestamp),
             randomString,
-            outputFormat: settings.outputFormat
+            outputFormat: 'base64'
         };
 
         this.entries.unshift(entry); // Add to beginning
@@ -415,10 +403,10 @@ class UIManager {
                 <strong>Timestamp (ms):</strong> ${entry.timestamp}
             </div>
             <div class="modal-detail">
-                <strong>Output Format:</strong> ${entry.outputFormat.toUpperCase()}
+                <strong>Random String:</strong> ${entry.randomString}
             </div>
             <div class="modal-detail">
-                <strong>Random String:</strong> ${entry.randomString}
+                <strong>Hash Format:</strong> Base64
             </div>
         `;
         
