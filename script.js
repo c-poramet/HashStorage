@@ -42,7 +42,6 @@ class CryptoUtils {
 class SettingsManager {
     constructor() {
         this.darkThemeToggle = document.getElementById('dark-theme-toggle');
-        this.hashAlgorithmToggle = document.getElementById('hash-algorithm-toggle');
         this.outputFormatToggle = document.getElementById('output-format-toggle');
         this.usernameInput = document.getElementById('username-input');
         this.init();
@@ -56,9 +55,6 @@ class SettingsManager {
         this.applyTheme(settings.theme);
         this.darkThemeToggle.checked = settings.theme === 'dark';
         
-        // Set algorithm
-        this.hashAlgorithmToggle.checked = settings.hashAlgorithm === 'sha512';
-        
         // Set output format
         this.outputFormatToggle.checked = settings.outputFormat === 'base64';
         
@@ -67,7 +63,6 @@ class SettingsManager {
         
         // Add event listeners
         this.darkThemeToggle.addEventListener('change', () => this.saveSettings());
-        this.hashAlgorithmToggle.addEventListener('change', () => this.saveSettings());
         this.outputFormatToggle.addEventListener('change', () => this.saveSettings());
         this.usernameInput.addEventListener('input', () => this.saveSettings());
     }
@@ -75,7 +70,6 @@ class SettingsManager {
     loadSettings() {
         const defaultSettings = {
             theme: 'light',
-            hashAlgorithm: 'sha256',
             outputFormat: 'base16',
             username: 'Anonymous'
         };
@@ -87,7 +81,6 @@ class SettingsManager {
     saveSettings() {
         const settings = {
             theme: this.darkThemeToggle.checked ? 'dark' : 'light',
-            hashAlgorithm: this.hashAlgorithmToggle.checked ? 'sha512' : 'sha256',
             outputFormat: this.outputFormatToggle.checked ? 'base64' : 'base16',
             username: this.usernameInput.value || 'Anonymous'
         };
@@ -130,27 +123,30 @@ class EntryManager {
         // Create the string to hash: answer + username + timestamp + randomString
         const hashInput = `${answer}|${settings.username}|${timestamp}|${randomString}`;
         
-        // Hash the input
-        const hashBytes = settings.hashAlgorithm === 'sha512' 
-            ? await CryptoUtils.sha512(hashInput)
-            : await CryptoUtils.sha256(hashInput);
+        // Hash the input with both algorithms
+        const sha256Bytes = await CryptoUtils.sha256(hashInput);
+        const sha512Bytes = await CryptoUtils.sha512(hashInput);
             
-        // Format the hash output
-        const hashedAnswer = settings.outputFormat === 'base64'
-            ? CryptoUtils.arrayBufferToBase64(hashBytes)
-            : CryptoUtils.arrayBufferToBase16(hashBytes);
+        // Format both hash outputs
+        const hashedAnswerSHA256 = settings.outputFormat === 'base64'
+            ? CryptoUtils.arrayBufferToBase64(sha256Bytes)
+            : CryptoUtils.arrayBufferToBase16(sha256Bytes);
+            
+        const hashedAnswerSHA512 = settings.outputFormat === 'base64'
+            ? CryptoUtils.arrayBufferToBase64(sha512Bytes)
+            : CryptoUtils.arrayBufferToBase16(sha512Bytes);
 
         const entry = {
             id: `entry_${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
             question,
             answer, // Store unhashed answer for reveal
-            hashedAnswer,
+            hashedAnswerSHA256,
+            hashedAnswerSHA512,
             hashInput, // Store the exact input that was hashed
             username: settings.username,
             timestamp,
             timestampFormatted: this.format24HourTime(timestamp),
             randomString,
-            hashAlgorithm: settings.hashAlgorithm,
             outputFormat: settings.outputFormat
         };
 
@@ -310,7 +306,12 @@ class UIManager {
                 <div class="card-header">
                     <div class="question">${this.escapeHtml(entry.question)}</div>
                     <div class="card-actions">
-                        <button class="copy-btn" data-entry-id="${entry.id}" title="Copy hash">
+                        <button class="copy-btn" data-entry-id="${entry.id}" data-hash-type="sha256" title="Copy SHA256 hash">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
+                            </svg>
+                        </button>
+                        <button class="copy-btn-sha512" data-entry-id="${entry.id}" data-hash-type="sha512" title="Copy SHA512 hash">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
                             </svg>
@@ -322,7 +323,10 @@ class UIManager {
                         </button>
                     </div>
                 </div>
-                <div class="hash-info">${entry.hashedAnswer}</div>
+                <div class="hash-info">
+                    <div class="hash-row"><strong>SHA256:</strong> ${entry.hashedAnswerSHA256}</div>
+                    <div class="hash-row"><strong>SHA512:</strong> ${entry.hashedAnswerSHA512}</div>
+                </div>
                 <div class="metadata">
                     <span class="username">${this.escapeHtml(entry.username)}</span>
                     <span class="timestamp">${entry.timestampFormatted}</span>
@@ -338,7 +342,7 @@ class UIManager {
         this.historyList.querySelectorAll('.history-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 // Don't trigger if clicking on buttons
-                if (e.target.closest('.copy-btn') || e.target.closest('.delete-btn-small')) {
+                if (e.target.closest('.copy-btn') || e.target.closest('.copy-btn-sha512') || e.target.closest('.delete-btn-small')) {
                     return;
                 }
                 const entryId = card.dataset.entryId;
@@ -346,12 +350,23 @@ class UIManager {
             });
         });
 
-        // Add copy button listeners
+        // Add SHA256 copy button listeners
         this.historyList.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const entryId = btn.dataset.entryId;
-                this.copyEntryHash(entryId);
+                const hashType = btn.dataset.hashType;
+                this.copyEntryHash(entryId, hashType);
+            });
+        });
+
+        // Add SHA512 copy button listeners
+        this.historyList.querySelectorAll('.copy-btn-sha512').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryId = btn.dataset.entryId;
+                const hashType = btn.dataset.hashType;
+                this.copyEntryHash(entryId, hashType);
             });
         });
 
@@ -383,8 +398,12 @@ class UIManager {
                 <div class="hash-display">${this.escapeHtml(entry.hashInput)}</div>
             </div>
             <div class="modal-detail">
-                <strong>Hashed Answer:</strong>
-                <div class="hash-display">${entry.hashedAnswer}</div>
+                <strong>SHA256 Hash:</strong>
+                <div class="hash-display">${entry.hashedAnswerSHA256}</div>
+            </div>
+            <div class="modal-detail">
+                <strong>SHA512 Hash:</strong>
+                <div class="hash-display">${entry.hashedAnswerSHA512}</div>
             </div>
             <div class="modal-detail">
                 <strong>Username:</strong> ${this.escapeHtml(entry.username)}
@@ -394,9 +413,6 @@ class UIManager {
             </div>
             <div class="modal-detail">
                 <strong>Timestamp (ms):</strong> ${entry.timestamp}
-            </div>
-            <div class="modal-detail">
-                <strong>Hash Algorithm:</strong> ${entry.hashAlgorithm.toUpperCase()}
             </div>
             <div class="modal-detail">
                 <strong>Output Format:</strong> ${entry.outputFormat.toUpperCase()}
@@ -419,22 +435,25 @@ class UIManager {
         return div.innerHTML;
     }
 
-    async copyEntryHash(entryId) {
+    async copyEntryHash(entryId, hashType = 'sha256') {
         const entry = this.entryManager.getEntry(entryId);
         if (!entry) return;
 
+        const hashToCopy = hashType === 'sha512' ? entry.hashedAnswerSHA512 : entry.hashedAnswerSHA256;
+        const algorithmName = hashType.toUpperCase();
+
         try {
-            await navigator.clipboard.writeText(entry.hashedAnswer);
-            this.showTemporaryMessage('Hash copied to clipboard!');
+            await navigator.clipboard.writeText(hashToCopy);
+            this.showTemporaryMessage(`${algorithmName} hash copied to clipboard!`);
         } catch (err) {
             // Fallback for older browsers
             const textArea = document.createElement('textarea');
-            textArea.value = entry.hashedAnswer;
+            textArea.value = hashToCopy;
             document.body.appendChild(textArea);
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            this.showTemporaryMessage('Hash copied to clipboard!');
+            this.showTemporaryMessage(`${algorithmName} hash copied to clipboard!`);
         }
     }
 
@@ -487,15 +506,17 @@ class UIManager {
 
         const allEntries = this.entryManager.getEntries();
         const filteredEntries = allEntries.filter(entry => {
-            // Search in question, answer, and hashed answer
+            // Search in question, answer, both hashes, and username
             const question = entry.question.toLowerCase();
             const answer = entry.answer.toLowerCase();
-            const hashedAnswer = entry.hashedAnswer.toLowerCase();
+            const hashedAnswerSHA256 = entry.hashedAnswerSHA256.toLowerCase();
+            const hashedAnswerSHA512 = entry.hashedAnswerSHA512.toLowerCase();
             const username = entry.username.toLowerCase();
             
             return question.includes(searchTerm) || 
                    answer.includes(searchTerm) || 
-                   hashedAnswer.includes(searchTerm) ||
+                   hashedAnswerSHA256.includes(searchTerm) ||
+                   hashedAnswerSHA512.includes(searchTerm) ||
                    username.includes(searchTerm);
         });
 
