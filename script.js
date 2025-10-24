@@ -145,9 +145,10 @@ class EntryManager {
             question,
             answer, // Store unhashed answer for reveal
             hashedAnswer,
+            hashInput, // Store the exact input that was hashed
             username: settings.username,
             timestamp,
-            timestampFormatted: new Date(timestamp).toLocaleString(),
+            timestampFormatted: this.format24HourTime(timestamp),
             randomString,
             hashAlgorithm: settings.hashAlgorithm,
             outputFormat: settings.outputFormat
@@ -156,6 +157,20 @@ class EntryManager {
         this.entries.unshift(entry); // Add to beginning
         this.saveEntries();
         return entry;
+    }
+
+    format24HourTime(timestamp) {
+        const date = new Date(timestamp);
+        const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+        return date.toLocaleString('en-GB', options);
     }
 
     loadEntries() {
@@ -174,6 +189,11 @@ class EntryManager {
     getEntry(id) {
         return this.entries.find(entry => entry.id === id);
     }
+
+    deleteEntry(id) {
+        this.entries = this.entries.filter(entry => entry.id !== id);
+        this.saveEntries();
+    }
 }
 
 // UI Manager
@@ -191,6 +211,17 @@ class UIManager {
         this.modalBody = document.getElementById('modal-body');
         this.closeBtn = document.querySelector('.close');
         
+        // Delete confirmation modal elements
+        this.deleteModal = document.getElementById('delete-modal');
+        this.confirmationCodeEl = document.getElementById('confirmation-code');
+        this.deleteConfirmationInput = document.getElementById('delete-confirmation-input');
+        this.confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        this.cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        this.closeDeleteBtn = document.querySelector('.close-delete');
+        
+        this.currentDeleteId = null;
+        this.currentConfirmationCode = null;
+        
         this.init();
     }
 
@@ -204,6 +235,20 @@ class UIManager {
         this.closeBtn.addEventListener('click', () => this.closeModal());
         this.modal.addEventListener('click', (e) => {
             if (e.target === this.modal) this.closeModal();
+        });
+
+        // Delete modal events
+        this.closeDeleteBtn.addEventListener('click', () => this.closeDeleteModal());
+        this.cancelDeleteBtn.addEventListener('click', () => this.closeDeleteModal());
+        this.confirmDeleteBtn.addEventListener('click', () => this.handleDeleteConfirmation());
+        this.deleteModal.addEventListener('click', (e) => {
+            if (e.target === this.deleteModal) this.closeDeleteModal();
+        });
+        this.deleteConfirmationInput.addEventListener('input', () => this.validateDeleteInput());
+        this.deleteConfirmationInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && this.confirmDeleteBtn.disabled === false) {
+                this.handleDeleteConfirmation();
+            }
         });
     }
 
@@ -249,7 +294,21 @@ class UIManager {
 
         this.historyView.innerHTML = entries.map(entry => `
             <div class="history-card" data-entry-id="${entry.id}">
-                <div class="question">${this.escapeHtml(entry.question)}</div>
+                <div class="card-header">
+                    <div class="question">${this.escapeHtml(entry.question)}</div>
+                    <div class="card-actions">
+                        <button class="copy-btn" data-entry-id="${entry.id}" title="Copy hash">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
+                            </svg>
+                        </button>
+                        <button class="delete-btn-small" data-entry-id="${entry.id}" title="Delete entry">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
                 <div class="hash-info">${entry.hashedAnswer}</div>
                 <div class="metadata">
                     <span class="username">${this.escapeHtml(entry.username)}</span>
@@ -258,11 +317,33 @@ class UIManager {
             </div>
         `).join('');
 
-        // Add click listeners to cards
+        // Add click listeners to cards (but not buttons)
         this.historyView.querySelectorAll('.history-card').forEach(card => {
-            card.addEventListener('click', () => {
+            card.addEventListener('click', (e) => {
+                // Don't trigger if clicking on buttons
+                if (e.target.closest('.copy-btn') || e.target.closest('.delete-btn-small')) {
+                    return;
+                }
                 const entryId = card.dataset.entryId;
                 this.showEntryDetails(entryId);
+            });
+        });
+
+        // Add copy button listeners
+        this.historyView.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryId = btn.dataset.entryId;
+                this.copyEntryHash(entryId);
+            });
+        });
+
+        // Add delete button listeners
+        this.historyView.querySelectorAll('.delete-btn-small').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const entryId = btn.dataset.entryId;
+                this.showDeleteConfirmation(entryId);
             });
         });
     }
@@ -279,6 +360,10 @@ class UIManager {
             <div class="modal-detail">
                 <strong>Answer (Revealed):</strong><br>
                 ${this.escapeHtml(entry.answer)}
+            </div>
+            <div class="modal-detail">
+                <strong>Exact Hash Input:</strong>
+                <div class="hash-display">${this.escapeHtml(entry.hashInput)}</div>
             </div>
             <div class="modal-detail">
                 <strong>Hashed Answer:</strong>
@@ -315,6 +400,61 @@ class UIManager {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    async copyEntryHash(entryId) {
+        const entry = this.entryManager.getEntry(entryId);
+        if (!entry) return;
+
+        try {
+            await navigator.clipboard.writeText(entry.hashedAnswer);
+            this.showTemporaryMessage('Hash copied to clipboard!');
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = entry.hashedAnswer;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            this.showTemporaryMessage('Hash copied to clipboard!');
+        }
+    }
+
+    showDeleteConfirmation(entryId) {
+        this.currentDeleteId = entryId;
+        this.currentConfirmationCode = this.generateConfirmationCode();
+        
+        this.confirmationCodeEl.textContent = this.currentConfirmationCode;
+        this.deleteConfirmationInput.value = '';
+        this.confirmDeleteBtn.disabled = true;
+        
+        this.deleteModal.style.display = 'block';
+        this.deleteConfirmationInput.focus();
+    }
+
+    generateConfirmationCode() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    validateDeleteInput() {
+        const input = this.deleteConfirmationInput.value;
+        this.confirmDeleteBtn.disabled = input !== this.currentConfirmationCode;
+    }
+
+    handleDeleteConfirmation() {
+        if (this.deleteConfirmationInput.value === this.currentConfirmationCode) {
+            this.entryManager.deleteEntry(this.currentDeleteId);
+            this.renderHistory();
+            this.closeDeleteModal();
+            this.showTemporaryMessage('Entry deleted successfully!');
+        }
+    }
+
+    closeDeleteModal() {
+        this.deleteModal.style.display = 'none';
+        this.currentDeleteId = null;
+        this.currentConfirmationCode = null;
     }
 
     showTemporaryMessage(message) {

@@ -84,6 +84,21 @@
                         <div id="modal-body"></div>
                     </div>
                 </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div id="delete-modal" class="modal">
+                    <div class="modal-content delete-modal-content">
+                        <span class="close-delete">&times;</span>
+                        <h3>Confirm Deletion</h3>
+                        <p>To delete this entry, please enter the 6-digit code:</p>
+                        <div class="confirmation-code" id="confirmation-code"></div>
+                        <input type="text" id="delete-confirmation-input" placeholder="Enter 6-digit code" maxlength="6">
+                        <div class="delete-modal-buttons">
+                            <button id="confirm-delete-btn" class="delete-btn">Delete Entry</button>
+                            <button id="cancel-delete-btn" class="cancel-btn">Cancel</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
