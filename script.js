@@ -207,6 +207,8 @@ class UIManager {
         this.questionInput = document.getElementById('question-input');
         this.answerInput = document.getElementById('answer-input');
         this.historyView = document.querySelector('.history-view');
+        this.historyList = document.querySelector('.history-list');
+        this.searchInput = document.getElementById('history-search');
         this.modal = document.getElementById('entry-modal');
         this.modalBody = document.getElementById('modal-body');
         this.closeBtn = document.querySelector('.close');
@@ -221,6 +223,7 @@ class UIManager {
         
         this.currentDeleteId = null;
         this.currentConfirmationCode = null;
+        this.filteredEntries = [];
         
         this.init();
     }
@@ -248,6 +251,14 @@ class UIManager {
         this.deleteConfirmationInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && this.confirmDeleteBtn.disabled === false) {
                 this.handleDeleteConfirmation();
+            }
+        });
+
+        // Search functionality
+        this.searchInput.addEventListener('input', () => this.handleSearch());
+        this.searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.handleSearch();
             }
         });
     }
@@ -280,19 +291,21 @@ class UIManager {
         }
     }
 
-    renderHistory() {
-        const entries = this.entryManager.getEntries();
+    renderHistory(entries = null) {
+        const entriesToRender = entries || this.entryManager.getEntries();
+        this.filteredEntries = entriesToRender;
         
-        if (entries.length === 0) {
-            this.historyView.innerHTML = `
+        if (entriesToRender.length === 0) {
+            const isEmpty = this.entryManager.getEntries().length === 0;
+            this.historyList.innerHTML = `
                 <div class="history-empty">
-                    <p>No entries yet. Create your first Question & Answer pair!</p>
+                    <p>${isEmpty ? 'No entries yet. Create your first Question & Answer pair!' : 'No entries match your search.'}</p>
                 </div>
             `;
             return;
         }
 
-        this.historyView.innerHTML = entries.map(entry => `
+        this.historyList.innerHTML = entriesToRender.map(entry => `
             <div class="history-card" data-entry-id="${entry.id}">
                 <div class="card-header">
                     <div class="question">${this.escapeHtml(entry.question)}</div>
@@ -317,8 +330,12 @@ class UIManager {
             </div>
         `).join('');
 
+        this.bindCardEventListeners();
+    }
+
+    bindCardEventListeners() {
         // Add click listeners to cards (but not buttons)
-        this.historyView.querySelectorAll('.history-card').forEach(card => {
+        this.historyList.querySelectorAll('.history-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 // Don't trigger if clicking on buttons
                 if (e.target.closest('.copy-btn') || e.target.closest('.delete-btn-small')) {
@@ -330,7 +347,7 @@ class UIManager {
         });
 
         // Add copy button listeners
-        this.historyView.querySelectorAll('.copy-btn').forEach(btn => {
+        this.historyList.querySelectorAll('.copy-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const entryId = btn.dataset.entryId;
@@ -339,7 +356,7 @@ class UIManager {
         });
 
         // Add delete button listeners
-        this.historyView.querySelectorAll('.delete-btn-small').forEach(btn => {
+        this.historyList.querySelectorAll('.delete-btn-small').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const entryId = btn.dataset.entryId;
@@ -457,6 +474,32 @@ class UIManager {
         this.deleteModal.classList.remove('show');
         this.currentDeleteId = null;
         this.currentConfirmationCode = null;
+    }
+
+    handleSearch() {
+        const searchTerm = this.searchInput.value.toLowerCase().trim();
+        
+        if (!searchTerm) {
+            // Show all entries if search is empty
+            this.renderHistory();
+            return;
+        }
+
+        const allEntries = this.entryManager.getEntries();
+        const filteredEntries = allEntries.filter(entry => {
+            // Search in question, answer, and hashed answer
+            const question = entry.question.toLowerCase();
+            const answer = entry.answer.toLowerCase();
+            const hashedAnswer = entry.hashedAnswer.toLowerCase();
+            const username = entry.username.toLowerCase();
+            
+            return question.includes(searchTerm) || 
+                   answer.includes(searchTerm) || 
+                   hashedAnswer.includes(searchTerm) ||
+                   username.includes(searchTerm);
+        });
+
+        this.renderHistory(filteredEntries);
     }
 
     showTemporaryMessage(message) {
