@@ -213,7 +213,6 @@ class UIManager {
         this.qrForegroundColor = document.getElementById('qr-foreground-color');
         this.qrBackgroundColor = document.getElementById('qr-background-color');
         this.qrCodeContainer = document.getElementById('qr-code-container');
-        this.generateQrBtn = document.getElementById('generate-qr-btn');
         this.downloadQrBtn = document.getElementById('download-qr-btn');
         this.qrQuestionText = document.getElementById('qr-question-text');
         this.qrTimestampText = document.getElementById('qr-timestamp-text');
@@ -260,9 +259,16 @@ class UIManager {
         });
         this.qrSha256Btn.addEventListener('click', () => this.selectHashType('sha256'));
         this.qrSha512Btn.addEventListener('click', () => this.selectHashType('sha512'));
-        this.qrForegroundColor.addEventListener('input', () => this.updateColorHex());
-        this.qrBackgroundColor.addEventListener('input', () => this.updateColorHex());
-        this.generateQrBtn.addEventListener('click', () => this.generateQrCode());
+        this.qrForegroundColor.addEventListener('input', () => {
+            this.updateColorHex();
+            this.saveColorPreferences();
+            this.generateQrCode();
+        });
+        this.qrBackgroundColor.addEventListener('input', () => {
+            this.updateColorHex();
+            this.saveColorPreferences();
+            this.generateQrCode();
+        });
         this.downloadQrBtn.addEventListener('click', () => this.downloadQrCode());
 
         // Search functionality
@@ -587,14 +593,12 @@ class UIManager {
         this.qrQuestionText.textContent = entry.question;
         this.qrTimestampText.textContent = entry.timestampFormatted;
         
-        // Reset to default state
-        this.selectHashType('sha256');
-        this.qrForegroundColor.value = '#000000';
-        this.qrBackgroundColor.value = '#ffffff';
+        // Load saved colors or use defaults
+        this.loadColorPreferences();
         this.updateColorHex();
-        this.qrCodeContainer.innerHTML = '';
-        this.downloadQrBtn.style.display = 'none';
-        this.currentQrCode = null;
+        
+        // Reset to SHA256
+        this.selectHashType('sha256');
         
         this.qrModal.classList.add('show');
     }
@@ -612,10 +616,8 @@ class UIManager {
         this.qrSha256Btn.classList.toggle('active', hashType === 'sha256');
         this.qrSha512Btn.classList.toggle('active', hashType === 'sha512');
         
-        // Clear previous QR code when changing hash type
-        this.qrCodeContainer.innerHTML = '';
-        this.downloadQrBtn.style.display = 'none';
-        this.currentQrCode = null;
+        // Auto-generate QR code with new hash type
+        this.generateQrCode();
     }
 
     updateColorHex() {
@@ -633,6 +635,7 @@ class UIManager {
         // Get selected hash type
         const issha256 = this.qrSha256Btn.classList.contains('active');
         const hashValue = issha256 ? this.currentQrEntry.hashedAnswerSHA256 : this.currentQrEntry.hashedAnswerSHA512;
+        const hashType = issha256 ? 'SHA256' : 'SHA512';
         
         // Clear container
         this.qrCodeContainer.innerHTML = '';
@@ -642,20 +645,64 @@ class UIManager {
             const qr = new QRious({
                 element: null,
                 value: hashValue,
-                size: 300,
+                size: 250, // Smaller size to leave room for text
                 foreground: this.qrForegroundColor.value,
                 background: this.qrBackgroundColor.value,
                 level: 'M'
             });
 
-            // Add canvas to container
-            this.qrCodeContainer.appendChild(qr.canvas);
-            this.currentQrCode = qr;
+            // Create composite canvas with text
+            const compositeCanvas = document.createElement('canvas');
+            const ctx = compositeCanvas.getContext('2d');
+            
+            // Set canvas size (QR code + text area)
+            compositeCanvas.width = 350;
+            compositeCanvas.height = 350;
+            
+            // Fill background
+            ctx.fillStyle = this.qrBackgroundColor.value;
+            ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
+            
+            // Draw QR code centered
+            ctx.drawImage(qr.canvas, 50, 25, 250, 250);
+            
+            // Add text
+            ctx.fillStyle = this.qrForegroundColor.value;
+            ctx.textAlign = 'center';
+            
+            // Question text (wrapped if too long)
+            ctx.font = 'bold 14px Arial, sans-serif';
+            const questionText = this.currentQrEntry.question;
+            const maxWidth = 320;
+            const words = questionText.split(' ');
+            let line = '';
+            let y = 295;
+            
+            for (let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    ctx.fillText(line, compositeCanvas.width / 2, y);
+                    line = words[n] + ' ';
+                    y += 18;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, compositeCanvas.width / 2, y);
+            
+            // Hash type and timestamp
+            ctx.font = '12px Arial, sans-serif';
+            ctx.fillText(`${hashType} • ${this.currentQrEntry.timestampFormatted}`, compositeCanvas.width / 2, y + 25);
+            
+            // Add to container
+            this.qrCodeContainer.appendChild(compositeCanvas);
+            this.currentQrCode = { canvas: compositeCanvas };
             
             // Show download button
             this.downloadQrBtn.style.display = 'inline-block';
             
-            this.showTemporaryMessage('QR code generated successfully!');
         } catch (error) {
             console.error('Error generating QR code:', error);
             this.showTemporaryMessage('Error generating QR code');
@@ -689,6 +736,35 @@ class UIManager {
         } catch (error) {
             console.error('Error downloading QR code:', error);
             this.showTemporaryMessage('Error downloading QR code');
+        }
+    }
+
+    // Color Preferences Management
+    saveColorPreferences() {
+        const colorPrefs = {
+            foreground: this.qrForegroundColor.value,
+            background: this.qrBackgroundColor.value
+        };
+        localStorage.setItem('qr_color_preferences', JSON.stringify(colorPrefs));
+    }
+
+    loadColorPreferences() {
+        try {
+            const saved = localStorage.getItem('qr_color_preferences');
+            if (saved) {
+                const colorPrefs = JSON.parse(saved);
+                this.qrForegroundColor.value = colorPrefs.foreground || '#000000';
+                this.qrBackgroundColor.value = colorPrefs.background || '#ffffff';
+            } else {
+                // Set defaults
+                this.qrForegroundColor.value = '#000000';
+                this.qrBackgroundColor.value = '#ffffff';
+            }
+        } catch (error) {
+            console.error('Error loading color preferences:', error);
+            // Set defaults on error
+            this.qrForegroundColor.value = '#000000';
+            this.qrBackgroundColor.value = '#ffffff';
         }
     }
 }
