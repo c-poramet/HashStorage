@@ -124,17 +124,18 @@ body {
     overflow: visible;
 }
 
-/* App Title - 1 flex */
+/* App Title - fixed height */
 .app-title {
-    flex: 1;
+    height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 16px 24px;
     background: linear-gradient(135deg, var(--cream-white) 0%, var(--cream-light) 100%);
     backdrop-filter: blur(15px);
     border-bottom: 2px solid var(--glass-border);
     box-shadow: 0 4px 16px var(--shadow-medium);
+    flex-shrink: 0;
 }
 
 .app-title h1 {
@@ -162,16 +163,15 @@ body {
     box-shadow: 0 2px 8px var(--magenta-shadow);
 }
 
-/* History view - 5 flex */
+/* History view - takes remaining space */
 .history-view {
-    flex: 5;
+    flex: 1;
     display: flex;
     flex-direction: column;
     padding: 20px;
     background: var(--glass-bg);
     backdrop-filter: blur(8px);
-    border-bottom: 2px solid var(--glass-border);
-    overflow: visible;
+    overflow: hidden;
 }
 
 /* Search container */
@@ -219,10 +219,12 @@ body {
     flex: 1;
     padding-top: 12px;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 12px;
     padding-bottom: 20px;
+    min-height: 0; /* Important for flexbox scrolling */
 }
 
 .history-item {
@@ -238,6 +240,8 @@ body {
     box-shadow: 0 4px 12px var(--shadow-medium);
     position: relative;
     overflow: hidden;
+    min-height: 120px;
+    flex-shrink: 0;
 }
 
 .history-item::before {
@@ -274,7 +278,8 @@ body {
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
 }
 
-/* Settings - 3 flex */
+/* Old settings panel - removed */
+/*
 .settings {
     flex: 3;
     display: flex;
@@ -302,6 +307,27 @@ body {
     color: var(--magenta-primary);
     font-weight: 700;
     font-size: 20px;
+    text-align: center;
+    text-shadow: 0 2px 4px var(--magenta-shadow);
+}
+*/
+
+/* New settings section in right column */
+.settings-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: var(--cream-white);
+    backdrop-filter: blur(15px);
+    border: 2px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: 0 6px 16px var(--shadow-medium);
+}
+
+.settings-section h3 {
+    margin-bottom: 20px;
+    color: var(--magenta-primary);
+    font-weight: 700;
+    font-size: 18px;
     text-align: center;
     text-shadow: 0 2px 4px var(--magenta-shadow);
 }
@@ -429,6 +455,8 @@ body {
     box-shadow: 0 4px 12px var(--shadow-medium);
     position: relative;
     overflow: hidden;
+    min-height: 120px;
+    flex-shrink: 0;
 }
 
 .history-card:hover {
