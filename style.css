@@ -730,6 +730,8 @@ body {
     overflow-y: auto;
     background: linear-gradient(135deg, var(--cream-white) 0%, var(--cream-light) 100%);
     backdrop-filter: blur(15px);
+    display: flex;
+    flex-direction: column;
 }
 
 /* Form title styling to match HashStorage title */
@@ -771,11 +773,27 @@ body {
 .button-container {
     display: flex;
     justify-content: center;
-    margin-top: 8px;
+    margin-top: 16px;
+    margin-bottom: 32px;
+    flex-shrink: 0;
+}
+
+/* Form layout optimization */
+#qa-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .form-group {
     margin-bottom: 24px;
+}
+
+.form-group:last-of-type {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
 }
 
 .form-group label {
@@ -813,6 +831,13 @@ body {
 .form-group textarea {
     resize: vertical;
     min-height: 120px;
+}
+
+/* Answer textarea optimization */
+.form-group:last-of-type textarea {
+    flex: 1;
+    min-height: 200px;
+    resize: none;
 }
 
 button {
