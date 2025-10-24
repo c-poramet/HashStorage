@@ -217,6 +217,7 @@ body {
 /* History list container */
 .history-list {
     flex: 1;
+    padding-top: 12px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
