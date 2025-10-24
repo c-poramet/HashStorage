@@ -298,12 +298,12 @@ class UIManager {
                     <div class="question">${this.escapeHtml(entry.question)}</div>
                     <div class="card-actions">
                         <button class="copy-btn" data-entry-id="${entry.id}" title="Copy hash">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/>
                             </svg>
                         </button>
                         <button class="delete-btn-small" data-entry-id="${entry.id}" title="Delete entry">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M6 19C6 20.1 6.9 21 8 21H16C17.1 21 18 20.1 18 19V7H6V19ZM19 4H15.5L14.5 3H9.5L8.5 4H5V6H19V4Z"/>
                             </svg>
                         </button>
@@ -389,11 +389,11 @@ class UIManager {
             </div>
         `;
         
-        this.modal.style.display = 'block';
+        this.modal.classList.add('show');
     }
 
     closeModal() {
-        this.modal.style.display = 'none';
+        this.modal.classList.remove('show');
     }
 
     escapeHtml(text) {
@@ -429,8 +429,10 @@ class UIManager {
         this.deleteConfirmationInput.value = '';
         this.confirmDeleteBtn.disabled = true;
         
-        this.deleteModal.style.display = 'block';
-        this.deleteConfirmationInput.focus();
+        this.deleteModal.classList.add('show');
+        setTimeout(() => {
+            this.deleteConfirmationInput.focus();
+        }, 100);
     }
 
     generateConfirmationCode() {
@@ -452,7 +454,7 @@ class UIManager {
     }
 
     closeDeleteModal() {
-        this.deleteModal.style.display = 'none';
+        this.deleteModal.classList.remove('show');
         this.currentDeleteId = null;
         this.currentConfirmationCode = null;
     }
