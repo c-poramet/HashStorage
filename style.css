@@ -121,6 +121,7 @@ body {
     backdrop-filter: blur(10px);
     border-right: 2px solid var(--glass-border);
     box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.15), 4px 0 16px var(--shadow-light);
+    overflow: visible;
 }
 
 /* App Title - 1 flex */
@@ -170,13 +171,14 @@ body {
     background: var(--glass-bg);
     backdrop-filter: blur(8px);
     border-bottom: 2px solid var(--glass-border);
-    overflow-y: hidden;
+    overflow: visible;
 }
 
 /* Search container */
 .search-container {
     position: relative;
     margin-bottom: 16px;
+    z-index: 5;
 }
 
 .search-container input {
@@ -219,6 +221,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+    padding-bottom: 20px;
 }
 
 .history-item {
@@ -429,14 +432,15 @@ body {
     box-shadow: 0 4px 12px var(--shadow-medium);
     position: relative;
     overflow: hidden;
-    margin-bottom: 12px;
 }
 
 .history-card:hover {
     background: var(--magenta-transparent);
     border-color: var(--magenta-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 15px var(--magenta-shadow);
+    box-shadow: 0 8px 25px var(--magenta-shadow);
+    z-index: 10;
+    position: relative;
 }
 
 .history-card .question {
