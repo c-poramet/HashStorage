@@ -17,22 +17,42 @@
             
             <!-- History View -->
             <div class="history-view">
-                <div class="history-item">History Item 1</div>
-                <div class="history-item">History Item 2</div>
-                <div class="history-item">History Item 3</div>
-                <div class="history-item">History Item 4</div>
-                <div class="history-item">History Item 5</div>
+                <div class="history-empty">
+                    <p>No entries yet. Create your first Question & Answer pair!</p>
+                </div>
             </div>
             
             <!-- Settings -->
             <div class="settings">
                 <div class="settings-content">
                     <h3>Settings</h3>
+                    
+                    <div class="setting-item">
+                        <label for="username-input">Username:</label>
+                        <input type="text" id="username-input" placeholder="Enter your username">
+                    </div>
+                    
                     <div class="setting-item">
                         <label class="theme-toggle">
                             <input type="checkbox" id="dark-theme-toggle">
                             <span class="toggle-slider"></span>
                             <span class="toggle-label">Dark Theme</span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="hash-toggle">
+                            <input type="checkbox" id="hash-algorithm-toggle">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">SHA512 (SHA256 if off)</span>
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label class="output-toggle">
+                            <input type="checkbox" id="output-format-toggle">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Base64 (Base16 if off)</span>
                         </label>
                     </div>
                 </div>
@@ -43,18 +63,27 @@
         <div class="right-column">
             <!-- Input Form -->
             <div class="input-form">
-                <h2>Input Form</h2>
-                <form>
+                <h2>Question & Answer</h2>
+                <form id="qa-form">
                     <div class="form-group">
-                        <label for="input1">Input Field 1:</label>
-                        <input type="text" id="input1" name="input1">
+                        <label for="question-input">The Question:</label>
+                        <textarea id="question-input" name="question" rows="3" placeholder="Enter your question here..."></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="input2">Input Field 2:</label>
-                        <textarea id="input2" name="input2" rows="4"></textarea>
+                        <label for="answer-input">The Answer:</label>
+                        <textarea id="answer-input" name="answer" rows="4" placeholder="Enter your answer here..."></textarea>
                     </div>
-                    <button type="submit">Submit</button>
+                    <button type="submit">Create Hash Entry</button>
                 </form>
+                
+                <!-- Entry Details Modal -->
+                <div id="entry-modal" class="modal">
+                    <div class="modal-content">
+                        <span class="close">&times;</span>
+                        <h3>Entry Details</h3>
+                        <div id="modal-body"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
